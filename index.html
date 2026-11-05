@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>حارس الريبو</title>
+<meta name="description" content="افحص أي مشروع على GitHub قبل ما تنزّله: آمن، مشبوه، أو خطير.">
+<meta name="theme-color" content="#0f151b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow column, a checkpoint flow — URL in, stamped verdict out, evidence folded below. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#e4e9ee; --ink:#14202b; --muted:#566676; --line:#d3dbe3;
+  --accent:#1f5fbf; --accent-ink:#ffffff;
+  --safe:#1b7445; --safe-bg:#e3f3ea; --warn:#9a5b00; --warn-bg:#fbf0dc; --danger:#b8222a; --danger-bg:#fbe6e6;
+  --info:#46606f; --info-bg:#e6edf2;
+  --f-display:"Readex Pro","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#17202a; --sunk:#111a22; --ink:#e6edf3; --muted:#93a3b2; --line:#283543;
+  --accent:#6aa6ff; --accent-ink:#0b1520;
+  --safe:#52c88f; --safe-bg:#12291f; --warn:#f0aa3c; --warn-bg:#2d2312; --danger:#ff7173; --danger-bg:#331719;
+  --info:#9fb4c3; --info-bg:#1b2731; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#17202a; --sunk:#111a22; --ink:#e6edf3; --muted:#93a3b2; --line:#283543;
+  --accent:#6aa6ff; --accent-ink:#0b1520;
+  --safe:#52c88f; --safe-bg:#12291f; --warn:#f0aa3c; --warn-bg:#2d2312; --danger:#ff7173; --danger-bg:#331719;
+  --info:#9fb4c3; --info-bg:#1b2731; color-scheme:dark}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+.wrap{max-width:720px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;flex:none}
+h1{font:700 1.5rem/1.2 var(--f-display);margin:0;letter-spacing:0}
+.tag{margin:2px 0 0;color:var(--muted);font-size:.95rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+label.lbl{display:block;font-weight:600;margin-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row input{flex:1 1 260px;min-width:0}
+input[type=text],input[type=password]{font:16px var(--f-mono);direction:ltr;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);color:var(--ink);width:100%}
+input:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:600 1rem var(--f-body);cursor:pointer;border-radius:10px;border:1px solid transparent}
+.btn{background:var(--accent);color:var(--accent-ink);padding:12px 22px;flex:0 0 auto}
+.btn:disabled{opacity:.55;cursor:progress}
+.ghost{background:transparent;border-color:var(--line);color:var(--ink);padding:10px 16px}
+.examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:.88rem;color:var(--muted);align-items:center}
+.chip{font:13px var(--f-mono);direction:ltr;background:var(--sunk);border:1px solid var(--line);color:var(--ink);padding:4px 10px;border-radius:99px}
+details.settings{margin-top:12px;font-size:.92rem}
+details.settings summary{cursor:pointer;color:var(--muted)}
+details.settings .inner{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.hint{color:var(--muted);font-size:.86rem;margin:0}
+.error{background:var(--danger-bg);color:var(--danger);border-radius:10px;padding:12px 14px;margin:0;font-weight:500}
+
+/* progress */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.steps li::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid var(--line);flex:none}
+.steps li.on{color:var(--ink)}
+.steps li.on::before{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps li.done{color:var(--ink)}
+.steps li.done::before{background:var(--safe);border-color:var(--safe)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.steps li.on::before{animation:none}.stamp{animation:none!important}}
+
+/* verdict */
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.stamp{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;text-align:center;border:4px double currentColor;font:700 1.35rem/1.15 var(--f-display);transform:rotate(-8deg);animation:stamp .35s cubic-bezier(.2,1.6,.4,1) both;background:var(--v-bg)}
+.stamp small{display:block;font:500 .7rem var(--f-body);opacity:.85}
+@keyframes stamp{from{transform:rotate(-8deg) scale(1.5);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
+.v-safe{--v:var(--safe);--v-bg:var(--safe-bg);color:var(--safe)}
+.v-warn{--v:var(--warn);--v-bg:var(--warn-bg);color:var(--warn)}
+.v-danger{--v:var(--danger);--v-bg:var(--danger-bg);color:var(--danger)}
+.verdict h2{font:700 1.3rem/1.3 var(--f-display);margin:0 0 4px;color:var(--ink);text-wrap:balance}
+.verdict .repo{font:14px var(--f-mono);color:var(--muted);direction:ltr;unicode-bidi:isolate;word-break:break-all}
+.verdict p{margin:6px 0 0}
+.result{border-top:6px solid var(--v)}
+.result.v-safe,.result.v-warn,.result.v-danger{color:var(--ink)}
+.reasons{margin:16px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.reasons li{display:flex;gap:10px;align-items:flex-start}
+.dot{width:9px;height:9px;border-radius:50%;margin-top:.6em;flex:none;background:var(--muted)}
+.dot.critical,.dot.high{background:var(--danger)}.dot.medium{background:var(--warn)}.dot.ok{background:var(--safe)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:18px}
+.fact{background:var(--surface);padding:10px 12px;min-width:0}
+.fact b{display:block;font:600 1.05rem var(--f-display);font-variant-numeric:tabular-nums}
+.fact span{color:var(--muted);font-size:.82rem}
+.advice{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--sunk);font-size:.95rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* developer details */
+.dev h3{font:600 1.05rem var(--f-display);margin:0 0 4px}
+.summary-line{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.sev-group{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.sev-title{font:600 .78rem var(--f-body);letter-spacing:.04em;color:var(--muted);margin:0}
+.finding{border:1px solid var(--line);border-inline-start:4px solid var(--s);border-radius:10px;padding:12px 14px;background:var(--surface);min-width:0}
+.s-critical{--s:var(--danger)}.s-high{--s:var(--danger)}.s-medium{--s:var(--warn)}.s-low{--s:var(--info)}.s-info{--s:var(--line)}
+.finding .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font:600 .72rem var(--f-body);padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--s)}
+.s-info .pill{color:var(--muted)}
+.finding h4{margin:0;font-size:1rem;font-weight:600}
+.finding p{margin:6px 0 0;font-size:.93rem;color:var(--muted)}
+.loc{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.loc a{font:13px var(--f-mono);direction:ltr;unicode-bidi:isolate;color:var(--accent);word-break:break-all;text-align:left}
+pre.snip{margin:0;font:12.5px/1.5 var(--f-mono);direction:ltr;text-align:left;background:var(--sunk);border-radius:8px;padding:8px 10px;overflow-x:auto;white-space:pre}
+.more{font-size:.85rem;color:var(--muted)}
+.deps{width:100%;border-collapse:collapse;font-size:.88rem}
+.deps-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.deps th,.deps td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+.deps td.m{font-family:var(--f-mono);direction:ltr;text-align:left;white-space:nowrap}
+.deps tr:last-child td{border-bottom:0}
+footer{color:var(--muted);font-size:.85rem;text-align:center}
+footer p{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 3 6 10v13c0 11.5 7.6 19.6 18 22 10.4-2.4 18-10.5 18-22V10L24 3Z" fill="var(--accent)"/><path d="m16 24.5 5.5 5.5L33 18.5" fill="none" stroke="var(--accent-ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <h1>حارس الريبو</h1>
+      <p class="tag">افحص أي مشروع على GitHub قبل ما تنزّله أو تشغّله.</p>
+    </div>
+  </header>
+
+  <p class="error" id="nojs">الصفحة مش قادرة تشتغل هون. افتحها بمتصفح عادي مثل Chrome أو Safari، أو من رابطها على GitHub Pages.</p>
+  <form class="panel" id="form" novalidate onsubmit="return false">
+    <label class="lbl" for="url">رابط المشروع على GitHub</label>
+    <div class="row">
+      <input type="text" id="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://github.com/owner/repo">
+      <button class="btn" id="go" type="submit">افحص</button>
+    </div>
+    <div class="examples"><span>جرّب:</span>
+      <button type="button" class="chip" data-ex="https://github.com/DataDog/guarddog">DataDog/guarddog</button>
+      <button type="button" class="chip" data-ex="https://github.com/microsoft/markitdown">microsoft/markitdown</button>
+    </div>
+    <details class="settings">
+      <summary>إعدادات للمبرمجين</summary>
+      <div class="inner">
+        <label for="token">GitHub token (اختياري)</label>
+        <input type="password" id="token" autocomplete="off" placeholder="ghp_…">
+        <p class="hint">بدون token تقدر تعمل حوالي 15 فحص بالساعة. الـ token يبقى على جهازك فقط، ويكفي token بدون أي صلاحيات.</p>
+      </div>
+    </details>
+  </form>
+
+  <p class="error" id="err" role="alert" hidden></p>
+
+  <section class="panel" id="progress" hidden aria-live="polite">
+    <ul class="steps" id="steps"></ul>
+  </section>
+
+  <section class="panel result" id="result" hidden></section>
+  <section class="panel dev" id="dev" hidden></section>
+
+  <footer>
+    <p>الفحص تلقائي ويقرأ الكود بدون ما يشغّله. النتيجة مؤشر يساعدك تقرر، مش ضمان كامل.</p>
+    <p>كل الفحص يصير داخل متصفحك، وما في سيرفر بيشوف شو بتفحص.</p>
+  </footer>
+</div>
+
+<script id="engine">
+/* ================= Scan engine (no DOM) ================= */
+const RG = (() => {
+  const SEV_W = {critical: 40, high: 15, medium: 5, low: 1, info: 0};
+  const CODE_EXT = /\.(m?js|cjs|ts|tsx|jsx|py|sh|bash|zsh|ps1|psm1|bat|cmd|vbs|rb|php|pl|lua|go|rs|java|kt|cs|swift|c|cc|cpp|h)$/i;
+  const SKIP_DIR = /(^|\/)(node_modules|vendor|third_party|\.git|bower_components|site-packages|__pycache__)\//i;
+  const BIN_RISKY = /\.(scr|lnk|vbs|vbe|com|pif|hta|wsf)$/i;
+  const BIN_EXEC = /\.(exe|dll|msi|jar|apk|dmg|pkg|appimage|deb|rpm|sys|bin|so|dylib)$/i;
+  const ARCHIVE = /\.(zip|rar|7z|tar\.gz|tgz|gz|cab|iso)$/i;
+
+  // ---------- helpers ----------
+  const lineOf = (text, idx) => text.slice(0, idx).split("\n").length;
+  const lineText = (text, line) => (text.split("\n")[line - 1] || "");
+  const clip = (s, n = 180) => { s = s.replace(/\t/g, "  "); const t = s.trimStart(); return t.length > n ? t.slice(0, n) + " …" : t; };
+  const isCode = p => CODE_EXT.test(p);
+  const base = p => p.split("/").pop().toLowerCase();
+  const isReadme = p => /^readme(\.|$)/i.test(base(p));
+
+  // ---------- content rules ----------
+  // each: id, sev, where(path)->bool, find(text,path)->[{index,extra}], title, simple, dev
+  const R = [];
+  const rx = (re) => (t) => { const out = []; re.lastIndex = 0; let m; const g = new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g"); while ((m = g.exec(t)) && out.length < 20) { out.push({index: m.index}); if (m[0].length === 0) g.lastIndex++; } return out; };
+
+  R.push({id: "vscode-autorun", sev: "critical", where: p => /(^|\/)\.vscode\/tasks\.json$/i.test(p),
+    find: rx(/"runOn"\s*:\s*"folderOpen"/),
+    title: "كود يشتغل تلقائياً بمجرد فتح المجلد",
+    simple: "المشروع مضبوط بحيث يشغّل أوامر على جهازك أول ما تفتحه في محرر VS Code، بدون ما تضغط أي شي.",
+    dev: "‎.vscode/tasks.json‎ فيه مهمة runOn: folderOpen. هذا أسلوب معروف في هجمات «مهام مقابلات العمل» المزيفة."});
+
+  R.push({id: "hidden-padding", sev: "critical", where: p => isCode(p) || /\.json$/i.test(p),
+    find: rx(/[ \t]{180,}\S/),
+    title: "كود مخبّى بمسافات فارغة طويلة",
+    simple: "في سطر فيه مئات المسافات الفاضية وبعدها كود، حتى ما يبين على الشاشة. هذي حيلة لإخفاء كود ضار.",
+    dev: "سطر يحتوي 180+ مسافة متتالية قبل كود. يُستخدم لدفع الكود خارج عرض المحرر ومراجعات GitHub."});
+
+  R.push({id: "eval-decoded", sev: "critical", where: isCode,
+    find: rx(/\b(eval|exec|Function|execSync|compile)\s*\(\s*(?:[\w.$]+\s*\(\s*)?(atob|Buffer\.from\s*\([^)]{0,200}['"]base64|base64\.b64decode|b64decode|zlib\.decompress|codecs\.decode|bytes\.fromhex|marshal\.loads|bz2\.decompress|lzma\.decompress)/),
+    title: "تشغيل كود مشفّر",
+    simple: "المشروع يفك تشفير نص مخبّى وبعدين يشغّله ككود. البرامج السليمة نادراً ما تحتاج هالشي.",
+    dev: "eval/exec على مخرجات base64/zlib/marshal. نمط شائع في الـ droppers لإخفاء الحمولة عن الفحص."});
+
+  R.push({id: "ps-encoded", sev: "critical", where: p => true,
+    find: rx(/powershell(\.exe)?[^\n]{0,80}\s-(e|ec|enc|encodedcommand)\s+[A-Za-z0-9+\/=]{24,}/i),
+    title: "أمر PowerShell مشفّر",
+    simple: "في أمر ويندوز مكتوب بشكل مشفّر حتى ما تقدر تقرأ شو بيعمل.",
+    dev: "powershell -EncodedCommand مع حمولة base64."});
+
+  R.push({id: "av-evasion", sev: "critical", where: p => true,
+    find: rx(/(Add-MpPreference[^\n]{0,60}Exclusion|Set-MpPreference[^\n]{0,60}Disable|DisableRealtimeMonitoring|netsh\s+advfirewall\s+set[^\n]{0,40}off)/i),
+    title: "محاولة تعطيل برنامج الحماية",
+    simple: "المشروع يحاول يطفّي حماية ويندوز (Defender) أو جدار الحماية. هذا تصرّف برامج ضارة.",
+    dev: "أوامر تعطيل Defender أو إضافة استثناءات أو إطفاء الجدار الناري."});
+
+  R.push({id: "cred-theft", sev: "critical", where: isCode,
+    find: rx(/(\\?["']?Login Data["']?|Local State["']|User Data[\\\/]+Default[\\\/]+(Cookies|Network)|wallet\.dat|nkbihfbeogaeaoehlefnkodbefgpgknn|bfnaelmomeimhlpmgjnjophhpkkoljpa|hnfanknocfeofbddgcijnmhnfnkdnaad|Local Storage[\\\/]+leveldb|find-generic-password|login\.keychain|\.ssh[\\\/]+id_(rsa|ed25519)|Exodus[\\\/]+exodus\.wallet|\.electrum[\\\/]+wallets)/i),
+    title: "قراءة كلمات السر أو المحافظ",
+    simple: "الكود يدوّر على كلمات السر المحفوظة بالمتصفح أو محافظ العملات الرقمية أو مفاتيح الدخول على جهازك.",
+    dev: "مسارات بيانات اعتماد المتصفح (Login Data, Cookies, Local State)، معرّفات إضافات المحافظ (MetaMask, Phantom, Coinbase)، مفاتيح SSH أو Keychain."});
+
+  R.push({id: "exfil-endpoint", sev: "high", where: p => isCode(p) || /\.(json|ya?ml|toml|ini|cfg)$/i.test(p),
+    find: rx(/(discord(app)?\.com\/api\/webhooks\/|api\.telegram\.org\/bot|pastebin\.com\/raw|paste\.ee\/r\/|transfer\.sh|webhook\.site|requestbin|ngrok(-free)?\.(io|app)|\.trycloudflare\.com|https?:\/\/(?!127\.|0\.0\.0\.0|10\.|192\.168\.|localhost)\d{1,3}(\.\d{1,3}){3}(:\d+)?\/)/i),
+    title: "يرسل بيانات لعنوان مشبوه",
+    simple: "الكود فيه اتصال بخدمات يستخدمها المخترقون عادة لاستلام البيانات المسروقة (مثل Discord webhook أو بوت Telegram أو عنوان IP مباشر).",
+    dev: "اتصال بـ webhook أو bot أو paste أو tunnel أو IP مباشر. راجع ما الذي يُرسل."});
+
+  R.push({id: "js-obfuscated", sev: "high", where: p => /\.(m?js|cjs|ts)$/i.test(p) && !/\.min\.js$/i.test(p),
+    find: (t) => { const m = t.match(/\b_0x[a-f0-9]{4,6}\b/g); return m && m.length >= 25 ? [{index: t.search(/\b_0x[a-f0-9]{4,6}\b/)}] : []; },
+    title: "كود مموّه عن قصد",
+    simple: "جزء من الكود مكتوب بطريقة مشوشة حتى ما يقدر أحد يفهمه. المشاريع المفتوحة الصادقة ما بتخبي كودها.",
+    dev: "أسماء متغيرات من نوع _0x1a2b بكثافة عالية: علامة javascript-obfuscator."});
+
+  R.push({id: "pipe-shell", sev: "high", where: p => isCode(p) || /(^|\/)(makefile|dockerfile)$/i.test(p) || /\.(ya?ml)$/i.test(p),
+    find: rx(/((curl|wget)\b[^\n|;]{0,200}\|\s*(sudo\s+)?(ba|z|da)?sh\b|(iwr|irm|Invoke-WebRequest|Invoke-RestMethod|DownloadString)\b[^\n]{0,200}\|\s*(iex|Invoke-Expression)\b|IEX\s*\(\s*\(?New-Object\s+Net\.WebClient)/i),
+    title: "ينزّل كود من الإنترنت ويشغّله فوراً",
+    simple: "في سكربت ينزّل أوامر من الإنترنت ويشغّلها مباشرة، فما في طريقة تعرف شو بيوصلك.",
+    dev: "curl|sh أو iwr|iex داخل كود أو سكربت بناء. الحمولة الحقيقية خارج الريبو ولم تُفحص."});
+
+  R.push({id: "setup-py-net", sev: "high", where: p => base(p) === "setup.py",
+    find: rx(/\b(urllib\.request|urlopen|requests\.(get|post)|socket\.socket|subprocess\.|os\.system|os\.popen)\b/),
+    title: "سكربت التثبيت يتصل بالإنترنت أو يشغّل أوامر",
+    simple: "ملف التثبيت الخاص ببايثون بيعمل أشياء زيادة أثناء التثبيت، مثل تشغيل أوامر أو الاتصال بالإنترنت.",
+    dev: "setup.py يُنفّذ عند pip install. وجود شبكة/subprocess فيه يعني تنفيذ كود وقت التثبيت."});
+
+  R.push({id: "persistence", sev: "medium", where: isCode,
+    find: rx(/(schtasks(\.exe)?\s+\/create|CurrentVersion\\\\?Run\b|LaunchAgents\/|crontab\s+-|\/etc\/cron\.|systemctl\s+enable|reg(\.exe)?\s+add[^\n]{0,80}\\Run)/i),
+    title: "يضيف نفسه للتشغيل التلقائي",
+    simple: "الكود يحاول يخلي نفسه يشتغل كل ما تفتح الجهاز.",
+    dev: "آليات بقاء: Run key، مهمة مجدولة، LaunchAgent، cron، أو خدمة systemd."});
+
+  R.push({id: "long-blob", sev: "medium", where: p => isCode(p) && !/\.min\.js$/i.test(p),
+    find: rx(/["'`](?!data:)[A-Za-z0-9+\/]{600,}={0,2}["'`]/),
+    title: "نص مشفّر طويل داخل الكود",
+    simple: "في كتلة طويلة من نص مشفّر داخل الكود. ممكن تكون صورة أو خط عادي، وممكن تكون برنامج مخبّى.",
+    dev: "سلسلة base64 بطول 600+ حرف داخل ملف كود. افحص ما يُفعل بها."});
+
+  R.push({id: "readme-password", sev: "high", where: isReadme,
+    find: (t) => /\b(zip|rar|7z|7-zip|archive|extract|unzip|winrar)\b|فك\s*الضغط|الملف\s*المضغوط/i.test(t) ? rx(/(password|passcode|pass|pwd|كلمة\s*(السر|المرور))\s*[:：=\-]\s*[`"*]*[\w@#!.\-]{3,}/i)(t) : [],
+    title: "الصفحة تطلب فك ملف بكلمة سر",
+    simple: "صفحة المشروع تعطيك كلمة سر لفك ملف مضغوط. المخترقون يعملوا هيك حتى ما يقدر برنامج الحماية يفحص الملف.",
+    dev: "README فيه كلمة مرور لأرشيف. نمط توزيع malware معروف على GitHub (أرشيف مشفّر لتجاوز فحص AV)."});
+
+  R.push({id: "readme-disable-av", sev: "critical", where: isReadme,
+    find: rx(/((disable|turn\s*off|deactivate|pause)[^\n]{0,40}(anti-?virus|defender|av\b|windows\s*security|smartscreen)|(عطّ?ل|اطف|أطف|وقّ?ف)[^\n]{0,30}(الحماية|مكافح|الأنتي|الانتي|ديفندر))/i),
+    title: "الصفحة تطلب منك تطفّي الحماية",
+    simple: "تعليمات المشروع تطلب منك تعطّل برنامج مكافحة الفيروسات. هذي أقوى علامة على برنامج ضار.",
+    dev: "README يطلب تعطيل AV/Defender/SmartScreen."});
+
+  R.push({id: "readme-ext-download", sev: "medium", where: isReadme,
+    find: rx(/https?:\/\/(www\.)?(mediafire\.com|mega\.(nz|io)|bit\.ly|tinyurl\.com|t\.me|gofile\.io|anonfiles|pixeldrain\.com|dropbox\.com\/s|drive\.google\.com\/file|1drv\.ms|cutt\.ly|is\.gd|rebrand\.ly|shorturl\.at)/i),
+    title: "رابط تحميل خارج GitHub",
+    simple: "المشروع يطلب منك تنزّل البرنامج من موقع ثاني (أو رابط مختصر). هيك ما في أي طريقة تتأكد من الملف اللي بتنزّله.",
+    dev: "روابط تحميل لاستضافات ملفات أو مختصرات روابط. الملف الفعلي خارج الريبو."});
+
+  R.push({id: "readme-pipe-shell", sev: "low", where: isReadme,
+    find: rx(/((curl|wget)\b[^\n|]{0,200}\|\s*(sudo\s+)?(ba|z)?sh\b|(iwr|irm)\b[^\n]{0,200}\|\s*iex\b)/i),
+    title: "طريقة التثبيت تشغّل سكربت من الإنترنت",
+    simple: "طريقة التثبيت تنزّل سكربت وتشغّله مباشرة. شائعة عند أدوات معروفة، بس افتح السكربت واقرأه قبل.",
+    dev: "README يستخدم curl|sh. شائع ومقبول عند جهات موثوقة، لكن السكربت لم يُفحص."});
+
+  R.push({id: "secrets", sev: "low", where: p => !/\.(md|txt)$/i.test(p),
+    find: rx(/(AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9]{32,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)/),
+    title: "مفاتيح سرية مكشوفة",
+    simple: "صاحب المشروع نسي مفاتيح سرية داخل الكود. هذا خطر عليه أكثر منك، بس بيدل على قلة اهتمام بالأمان.",
+    dev: "مفاتيح AWS/GitHub/Slack/OpenAI أو مفتاح خاص مُضمَّن في المستودع."});
+
+  R.push({id: "gha-prt", sev: "medium", where: p => /^\.github\/workflows\/.+\.ya?ml$/i.test(p),
+    find: (t) => /pull_request_target/.test(t) && /github\.event\.pull_request\.head\.(sha|ref)/.test(t) ? [{index: t.indexOf("pull_request_target")}] : [],
+    title: "إعداد GitHub Actions قابل للاستغلال",
+    simple: "إعدادات البناء الآلي فيها ثغرة ممكن يستغلها أي حدا يرسل تعديل للمشروع.",
+    dev: "pull_request_target مع checkout لكود الـ PR: يسمح بتنفيذ كود غريب بصلاحيات وأسرار الريبو."});
+
+  // package.json install hooks
+  function packageJsonRule(text, path) {
+    const out = [];
+    let pj; try { pj = JSON.parse(text); } catch { return out; }
+    const s = pj && pj.scripts || {};
+    for (const k of ["preinstall", "install", "postinstall", "prepare", "preuninstall"]) {
+      if (typeof s[k] !== "string") continue;
+      const v = s[k];
+      const idx = Math.max(0, text.indexOf('"' + k + '"'));
+      const danger = /(curl|wget|https?:\/\/|node\s+-e|powershell|bash\s+-c|sh\s+-c|\beval\b|base64|\|\s*(ba)?sh)/i.test(v);
+      const benign = /^(node-gyp|husky|npm run build|tsc|patch-package|ngcc|prebuild-install|node-pre-gyp|electron-builder install-app-deps)/i.test(v.trim());
+      if (danger) out.push({rule: "npm-hook-remote", index: idx});
+      else if (!benign && k !== "prepare") out.push({rule: "npm-hook", index: idx});
+    }
+    return out;
+  }
+  const NPM_RULES = {
+    "npm-hook-remote": {sev: "critical", title: "التثبيت يشغّل أوامر من الإنترنت",
+      simple: "بمجرد ما تثبّت المشروع (npm install) بيشغّل أوامر تنزّل أو تنفّذ كود من برّا.",
+      dev: "سكربت دورة حياة في package.json (pre/postinstall) يستخدم curl/wget/node -e/eval."},
+    "npm-hook": {sev: "low", title: "التثبيت يشغّل سكربت تلقائياً",
+      simple: "المشروع يشغّل سكربت أثناء التثبيت. هذا عادي أحياناً، بس يستحق نظرة.",
+      dev: "package.json فيه preinstall/install/postinstall. راجع السكربت المستدعى."}
+  };
+
+  // ---------- run content rules ----------
+  function scanFile(path, text) {
+    const hits = [];
+    for (const r of R) {
+      if (!r.where(path)) continue;
+      for (const h of r.find(text, path)) {
+        const line = lineOf(text, h.index);
+        hits.push({rule: r.id, path, line, snippet: clip(lineText(text, line))});
+      }
+    }
+    if (base(path) === "package.json") {
+      for (const h of packageJsonRule(text, path)) {
+        const line = lineOf(text, h.index);
+        hits.push({rule: h.rule, path, line, snippet: clip(lineText(text, line))});
+      }
+    }
+    return hits;
+  }
+  const RULE_META = Object.fromEntries(R.map(r => [r.id, r]).concat(Object.entries(NPM_RULES)));
+
+  // ---------- tree rules ----------
+  function scanTree(paths, readmeText) {
+    const out = [];
+    const risky = paths.filter(p => BIN_RISKY.test(p) && !SKIP_DIR.test(p));
+    const execs = paths.filter(p => BIN_EXEC.test(p) && !SKIP_DIR.test(p));
+    const archives = paths.filter(p => ARCHIVE.test(p) && !SKIP_DIR.test(p));
+    if (risky.length) out.push({rule: "tree-risky-bin", files: risky});
+    if (execs.length) out.push({rule: "tree-exec", files: execs});
+    if (archives.length) {
+      const pw = readmeText && /(password|pass|pwd|كلمة\s*(السر|المرور))\s*[:：=\-]/i.test(readmeText);
+      out.push({rule: pw ? "tree-archive-pw" : "tree-archive", files: archives});
+    }
+    return out;
+  }
+  Object.assign(RULE_META, {
+    "tree-risky-bin": {sev: "high", title: "ملفات من أنواع يستخدمها المخترقون",
+      simple: "في المشروع ملفات مثل .scr أو .lnk أو .vbs. هذي أنواع نادراً ما تلزم مشروع برمجي، وكثير بتستخدم لتشغيل برامج ضارة.",
+      dev: "ملفات تنفيذية/سكربت ويندوز عالية الخطورة داخل الريبو."},
+    "tree-exec": {sev: "medium", title: "برامج جاهزة ما بنقدر نقرأ محتواها",
+      simple: "في ملفات تشغيل جاهزة (مثل .exe). ما في طريقة نتأكد شو فيها من الكود المكتوب، فلازم تكون واثق بصاحب المشروع.",
+      dev: "ملفات ثنائية مضمّنة (exe/dll/jar/apk…). لا يمكن مطابقتها مع الكود المصدري. يُنصح بفحصها على VirusTotal."},
+    "tree-archive": {sev: "medium", title: "ملفات مضغوطة داخل المشروع",
+      simple: "في ملفات مضغوطة (zip أو rar). ما بنقدر نفحص شو جوّاها.",
+      dev: "أرشيفات مُضمّنة في الريبو؛ لم يُفحص محتواها."},
+    "tree-archive-pw": {sev: "critical", title: "ملف مضغوط محمي بكلمة سر",
+      simple: "المشروع فيه ملف مضغوط، وصفحته تعطيك كلمة سر لفكه. هذا من أشهر طرق نشر الفيروسات على GitHub.",
+      dev: "أرشيف + كلمة مرور في README: يمنع AV والمنصة من فحص المحتوى."}
+  });
+
+  // ---------- reputation ----------
+  const DAY = 864e5;
+  function scanMeta(repo, owner, commitCount, now = Date.now()) {
+    const out = [];
+    const repoAge = (now - Date.parse(repo.created_at)) / DAY;
+    const ownerAge = owner && owner.created_at ? (now - Date.parse(owner.created_at)) / DAY : null;
+    const pushedAgo = (now - Date.parse(repo.pushed_at)) / DAY;
+    const stars = repo.stargazers_count || 0;
+    if (ownerAge !== null && ownerAge < 30) out.push({rule: "meta-new-owner", value: Math.round(ownerAge)});
+    if (repoAge < 21 && stars >= 150) out.push({rule: "meta-star-burst", value: stars});
+    else if (repoAge < 7) out.push({rule: "meta-new-repo", value: Math.round(repoAge)});
+    if (commitCount !== null && commitCount <= 2 && stars >= 50) out.push({rule: "meta-few-commits", value: commitCount});
+    if (pushedAgo > 730) out.push({rule: "meta-stale", value: Math.round(pushedAgo / 365)});
+    if (repo.archived) out.push({rule: "meta-archived"});
+    return out;
+  }
+  Object.assign(RULE_META, {
+    "meta-new-owner": {sev: "medium", title: "حساب صاحب المشروع جديد",
+      simple: "الحساب اللي نشر المشروع عمره أقل من شهر. كثير من المشاريع الضارة بتنشرها حسابات جديدة.",
+      dev: "عمر حساب المالك أقل من 30 يوم."},
+    "meta-star-burst": {sev: "high", title: "نجوم كثيرة بوقت قصير جداً",
+      simple: "المشروع جديد كثير بس عليه نجوم كثير. ممكن تكون نجوم مشتراة حتى يبين موثوق.",
+      dev: "ريبو عمره أقل من 3 أسابيع مع 150+ نجمة: مؤشر على شراء النجوم (star farming)."},
+    "meta-new-repo": {sev: "low", title: "المشروع جديد جداً",
+      simple: "المشروع انعمل خلال آخر أسبوع، فما في وقت كافي حتى يجربه ناس ويكتشفوا مشاكله.",
+      dev: "عمر الريبو أقل من 7 أيام."},
+    "meta-few-commits": {sev: "medium", title: "مشروع مشهور بس بدون تاريخ تطوير",
+      simple: "المشروع عليه نجوم كثير، بس كله انرفع دفعة وحدة تقريباً. المشاريع الحقيقية بتنبني على مراحل.",
+      dev: "عدد الـ commits ≤ 2 مع عدد نجوم مرتفع."},
+    "meta-stale": {sev: "low", title: "المشروع متروك",
+      simple: "صاحب المشروع ما حدّثه من فترة طويلة، فممكن تكون فيه ثغرات ما انصلحت.",
+      dev: "آخر push قبل أكثر من سنتين."},
+    "meta-archived": {sev: "info", title: "المشروع مؤرشف",
+      simple: "صاحب المشروع وقف تطويره رسمياً.", dev: "الريبو بحالة archived."}
+  });
+  Object.assign(RULE_META, {
+    "dep-vuln": {sev: "medium", title: "مكتبات فيها ثغرات معروفة",
+      simple: "المشروع يستخدم مكتبات فيها ثغرات أمنية معلنة. هذا ما بيعني إنه ضار، بس لازم يتحدّث.",
+      dev: "إصدارات تبعيات مطابقة لسجلات OSV.dev."}
+  });
+
+  // ---------- verdict ----------
+  function verdict(findings) {
+    const seen = new Map();
+    for (const f of findings) { const s = RULE_META[f.rule].sev; if (!seen.has(f.rule)) seen.set(f.rule, s); }
+    let score = 0, crit = 0, high = 0;
+    for (const s of seen.values()) { score += SEV_W[s]; if (s === "critical") crit++; if (s === "high") high++; }
+    let level = "safe";
+    if (crit || score >= 40) level = "danger";
+    else if (high || score >= 10) level = "warn";
+    return {level, score, crit, high};
+  }
+
+  // ---------- dependency parsing (for OSV) ----------
+  function depsFrom(path, text) {
+    const out = [];
+    const b = base(path);
+    if (b === "package.json") {
+      try { const pj = JSON.parse(text); for (const sec of ["dependencies", "devDependencies"]) for (const [n, v] of Object.entries(pj[sec] || {})) { const m = String(v).match(/^[\^~=v]?\s*(\d+\.\d+\.\d+[\w.\-]*)$/); if (m) out.push({ecosystem: "npm", name: n, version: m[1]}); } } catch {}
+    } else if (/^requirements.*\.txt$/.test(b)) {
+      for (const l of text.split("\n")) { const m = l.trim().match(/^([A-Za-z0-9_.\-]+)(\[[^\]]*\])?\s*==\s*([\w.\-]+)/); if (m) out.push({ecosystem: "PyPI", name: m[1], version: m[3]}); }
+    }
+    return out;
+  }
+
+  // ---------- which files to read ----------
+  function pickFiles(tree, max = 90) {
+    const blobs = tree.filter(t => t.type === "blob" && !SKIP_DIR.test(t.path));
+    const p0 = [], p1 = [];
+    for (const t of blobs) {
+      const p = t.path, b = base(p), size = t.size || 0;
+      if (size > 400000) continue;
+      const key = b === "package.json" || /^setup\.py$|^pyproject\.toml$|^requirements.*\.txt$|^makefile$|^dockerfile$|^\.npmrc$|^binding\.gyp$/.test(b)
+        || /(^|\/)\.vscode\/(tasks|settings|launch)\.json$/i.test(p) || /^\.github\/workflows\//i.test(p)
+        || (isReadme(p) && p.split("/").length <= 2) || /\.(ps1|bat|cmd|vbs|sh)$/i.test(p);
+      if (key) p0.push(t); else if (isCode(p) && !/\.min\.js$/i.test(p) && !/(^|\/)(test|tests|__tests__|spec|examples?|docs?)\//i.test(p)) p1.push(t);
+    }
+    p1.sort((a, b) => (a.path.split("/").length - b.path.split("/").length) || ((a.size || 0) - (b.size || 0)));
+    const chosen = p0.slice(0, 40).concat(p1).slice(0, max);
+    const codeTotal = blobs.filter(t => isCode(t.path)).length;
+    return {chosen, codeTotal};
+  }
+
+  function parseRepo(input) {
+    let s = (input || "").trim();
+    if (!s) return null;
+    s = s.replace(/^git@github\.com:/i, "https://github.com/").replace(/^(https?:\/\/)?(www\.)?github\.com\//i, "");
+    s = s.replace(/[?#].*$/, "").replace(/\.git$/i, "").replace(/\/+$/, "");
+    const parts = s.split("/");
+    if (parts.length < 2 || !/^[\w.\-]+$/.test(parts[0]) || !/^[\w.\-]+$/.test(parts[1])) return null;
+    let ref = null;
+    if (parts[2] === "tree" || parts[2] === "blob") ref = parts[3] || null;
+    return {owner: parts[0], repo: parts[1], ref};
+  }
+
+  return {scanFile, scanTree, scanMeta, verdict, depsFrom, pickFiles, parseRepo, RULE_META, SEV_W};
+})();
+if (typeof module !== "undefined") module.exports = RG;
+</script>
+
+<script>
+/* ================= UI + network ================= */
+(() => {
+  const $ = s => document.querySelector(s);
+  $("#nojs").hidden = true;
+  const form = $("#form"), urlIn = $("#url"), go = $("#go"), err = $("#err"), prog = $("#progress"), stepsEl = $("#steps"), resEl = $("#result"), devEl = $("#dev"), tokIn = $("#token");
+  const store = { get(k){ try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set(k,v){ try { v ? localStorage.setItem(k,v) : localStorage.removeItem(k); } catch {} } };
+  tokIn.value = store.get("rg-token");
+  tokIn.addEventListener("change", () => store.set("rg-token", tokIn.value.trim()));
+  document.querySelectorAll("[data-ex]").forEach(b => b.addEventListener("click", () => { urlIn.value = b.dataset.ex; form.requestSubmit(); }));
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const nf = new Intl.NumberFormat("ar-EG-u-nu-latn");
+  function ago(iso) {
+    const d = (Date.now() - Date.parse(iso)) / 864e5;
+    if (d < 1) return "اليوم";
+    if (d < 30) { const n = Math.round(d); return n === 1 ? "منذ يوم" : n === 2 ? "منذ يومين" : `منذ ${n} أيام`; }
+    if (d < 365) { const n = Math.round(d / 30); return n === 1 ? "منذ شهر" : n === 2 ? "منذ شهرين" : `منذ ${n} أشهر`; }
+    const n = Math.round(d / 365); return n === 1 ? "منذ سنة" : n === 2 ? "منذ سنتين" : `منذ ${n} سنوات`;
+  }
+
+  class ScanError extends Error {}
+  async function gh(path, opts = {}) {
+    const headers = {Accept: "application/vnd.github+json"};
+    const t = tokIn.value.trim(); if (t) headers.Authorization = "Bearer " + t;
+    let r;
+    try { r = await fetch("https://api.github.com/" + path, {headers}); }
+    catch { throw new ScanError("ما قدرنا نوصل لـ GitHub. تأكد من الاتصال بالإنترنت. وإذا فاتح الصفحة كمعاينة داخل تطبيق (مثل Claude أو الواتساب)، افتحها بمتصفح عادي."); }
+    if (r.status === 404) throw new ScanError(opts.nf || "ما لقينا هالمشروع. يمكن الرابط غلط، أو المشروع خاص (Private).");
+    if ((r.status === 403 || r.status === 429) && r.headers.get("x-ratelimit-remaining") === "0") {
+      const reset = +r.headers.get("x-ratelimit-reset") * 1000; const mins = Math.max(1, Math.ceil((reset - Date.now()) / 6e4));
+      throw new ScanError(`وصلت للحد المسموح من GitHub. جرّب بعد ${mins} دقيقة، أو حط GitHub token من إعدادات المبرمجين.`);
+    }
+    if (r.status === 401) throw new ScanError("الـ token اللي حطيته غير صالح. امسحه أو حط واحد جديد.");
+    if (!r.ok) throw new ScanError(`صار خطأ من GitHub (${r.status}). جرّب بعد شوي.`);
+    return opts.raw ? r : r.json();
+  }
+  async function raw(o, rp, ref, path) {
+    const u = `https://raw.githubusercontent.com/${o}/${rp}/${encodeURIComponent(ref)}/${path.split("/").map(encodeURIComponent).join("/")}`;
+    try { const r = await fetch(u); return r.ok ? await r.text() : null; } catch { return null; }
+  }
+  async function pool(items, n, fn) { const out = []; let i = 0; await Promise.all(Array.from({length: Math.min(n, items.length)}, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; }
+
+  const STEPS = ["قراءة معلومات المشروع", "فحص سمعة صاحب المشروع", "جلب قائمة الملفات", "قراءة الكود وفحصه", "فحص المكتبات المستخدمة"];
+  function setStep(i, extra) {
+    stepsEl.innerHTML = STEPS.map((s, k) => `<li class="${k < i ? "done" : k === i ? "on" : ""}">${esc(s)}${k === i && extra ? ` <span class="hint">(${esc(extra)})</span>` : ""}</li>`).join("");
+  }
+
+  async function scan(input) {
+    const ref0 = RG.parseRepo(input);
+    if (!ref0) throw new ScanError("الرابط مش رابط مشروع GitHub. لازم يكون بهالشكل: github.com/صاحب-المشروع/اسم-المشروع");
+    const {owner: o, repo: rp} = ref0;
+    setStep(0);
+    const repo = await gh(`repos/${o}/${rp}`);
+    const ref = ref0.ref || repo.default_branch;
+    setStep(1);
+    const [ownerInfo, commitCount] = await Promise.all([
+      gh(`users/${repo.owner.login}`).catch(() => null),
+      gh(`repos/${o}/${rp}/commits?per_page=1&sha=${encodeURIComponent(ref)}`, {raw: true}).then(async r => {
+        const link = r.headers.get("link") || ""; const m = link.match(/[?&]page=(\d+)>;\s*rel="last"/); if (m) return +m[1];
+        const j = await r.json(); return Array.isArray(j) ? j.length : null;
+      }).catch(() => null)
+    ]);
+    setStep(2);
+    const treeRes = await gh(`repos/${o}/${rp}/git/trees/${encodeURIComponent(ref)}?recursive=1`, {nf: "ما قدرنا نقرأ ملفات المشروع (الفرع غير موجود؟)."});
+    const tree = treeRes.tree || [];
+    const releases = await gh(`repos/${o}/${rp}/releases?per_page=3`).catch(() => []);
+    const {chosen, codeTotal} = RG.pickFiles(tree);
+    setStep(3, `0 / ${chosen.length}`);
+    let done = 0;
+    const texts = await pool(chosen, 8, async t => { const x = await raw(o, rp, ref, t.path); done++; if (done % 5 === 0 || done === chosen.length) setStep(3, `${done} / ${chosen.length}`); return x; });
+    const findings = [];
+    let readme = "", deps = [], read = 0;
+    chosen.forEach((t, i) => {
+      const txt = texts[i]; if (txt == null) return; read++;
+      if (/^readme(\.|$)/i.test(t.path)) readme = txt;
+      findings.push(...RG.scanFile(t.path, txt));
+      deps.push(...RG.depsFrom(t.path, txt));
+    });
+    findings.push(...RG.scanTree(tree.map(t => t.path), readme));
+    findings.push(...RG.scanMeta(repo, ownerInfo, commitCount));
+    setStep(4);
+    let vulns = null;
+    const seen = new Set(); deps = deps.filter(d => { const k = d.ecosystem + d.name + d.version; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 300);
+    if (deps.length) {
+      try {
+        const r = await fetch("https://api.osv.dev/v1/querybatch", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({queries: deps.map(d => ({package: {ecosystem: d.ecosystem, name: d.name}, version: d.version}))})});
+        if (r.ok) { const j = await r.json(); vulns = []; (j.results || []).forEach((res, i) => { if (res.vulns && res.vulns.length) vulns.push({...deps[i], ids: res.vulns.map(v => v.id)}); }); if (vulns.length) findings.push({rule: "dep-vuln", count: vulns.length}); }
+      } catch { vulns = null; }
+    } else vulns = [];
+    setStep(5);
+    return {o, rp, ref, repo, ownerInfo, commitCount, findings, read, picked: chosen.length, codeTotal, truncated: !!treeRes.truncated, totalFiles: tree.filter(t => t.type === "blob").length, deps, vulns, releases: Array.isArray(releases) ? releases : []};
+  }
+
+  const LV = {
+    safe: {cls: "v-safe", word: "آمن", sub: "على الأغلب", head: "ما لقينا علامات خطر واضحة",
+      advice: "الفحص ما لقى شي مقلق، بس هذا مش ضمان كامل. نزّل البرنامج من صفحة المشروع الرسمية بس (Releases)، وخلّي برنامج الحماية شغّال."},
+    warn: {cls: "v-warn", word: "مشبوه", sub: "انتبه", head: "في أشياء تستاهل الحذر",
+      advice: "لا تنزّله إلا إذا كنت بتعرف صاحب المشروع أو المشروع معروف. إذا لازم تجربه، جرّبه على جهاز تجريبي أو اسأل حدا مبرمج يشوف التفاصيل."},
+    danger: {cls: "v-danger", word: "خطير", sub: "لا تنزّله", head: "لقينا علامات قوية على كود ضار",
+      advice: "لا تنزّل المشروع ولا تفتحه ولا تثبّته. إذا كنت نزّلته وشغّلته، افحص جهازك ببرنامج حماية وغيّر كلمات السر المهمة من جهاز ثاني."}
+  };
+  const SEV_AR = {critical: "حرج", high: "عالي", medium: "متوسط", low: "منخفض", info: "معلومة"};
+  const SEV_ORDER = ["critical", "high", "medium", "low", "info"];
+
+  function render(res) {
+    const v = RG.verdict(res.findings), L = LV[v.level];
+    const byRule = new Map();
+    for (const f of res.findings) { if (!byRule.has(f.rule)) byRule.set(f.rule, []); byRule.get(f.rule).push(f); }
+    const rules = [...byRule.keys()].sort((a, b) => SEV_ORDER.indexOf(RG.RULE_META[a].sev) - SEV_ORDER.indexOf(RG.RULE_META[b].sev));
+    const shown = rules.filter(r => RG.RULE_META[r].sev !== "info" && RG.RULE_META[r].sev !== "low").slice(0, 4);
+    const reasons = shown.length ? shown.map(r => { const m = RG.RULE_META[r]; return `<li><span class="dot ${m.sev}"></span><span><b>${esc(m.title)}.</b> ${esc(m.simple)}</span></li>`; }).join("")
+      : positives(res).map(t => `<li><span class="dot ok"></span><span>${esc(t)}</span></li>`).join("");
+    const rp = res.repo, ow = res.ownerInfo;
+    resEl.className = "panel result " + L.cls;
+    resEl.innerHTML = `
+      <div class="verdict">
+        <div class="stamp ${L.cls}" role="img" aria-label="النتيجة: ${L.word}">${L.word}<small>${L.sub}</small></div>
+        <div style="min-width:0">
+          <h2>${L.head}</h2>
+          <div class="repo">${esc(rp.full_name)}</div>
+          ${rp.description ? `<p>${esc(rp.description)}</p>` : ""}
+        </div>
+      </div>
+      <ul class="reasons">${reasons}</ul>
+      <div class="facts">
+        <div class="fact"><b>${nf.format(rp.stargazers_count)}</b><span>نجمة</span></div>
+        <div class="fact"><b>${ago(rp.created_at)}</b><span>تاريخ إنشاء المشروع</span></div>
+        <div class="fact"><b>${ago(rp.pushed_at)}</b><span>آخر تحديث</span></div>
+        <div class="fact"><b>${ow && ow.created_at ? ago(ow.created_at) : "—"}</b><span>عمر حساب صاحبه</span></div>
+      </div>
+      <div class="advice">${esc(L.advice)}</div>
+      <div class="actions">
+        <button type="button" class="ghost" id="toggleDev" aria-expanded="false" aria-controls="dev">عرض التفاصيل التقنية</button>
+        <button type="button" class="ghost" id="copyRep">نسخ ملخص النتيجة</button>
+      </div>`;
+    renderDev(res, rules, byRule, v);
+    resEl.hidden = false; devEl.hidden = true;
+    const tb = $("#toggleDev");
+    tb.addEventListener("click", () => { devEl.hidden = !devEl.hidden; tb.setAttribute("aria-expanded", String(!devEl.hidden)); tb.textContent = devEl.hidden ? "عرض التفاصيل التقنية" : "إخفاء التفاصيل التقنية"; if (!devEl.hidden) devEl.scrollIntoView({behavior: "smooth", block: "start"}); });
+    $("#copyRep").addEventListener("click", async (e) => {
+      const txt = `حارس الريبو: ${rp.full_name}\nالنتيجة: ${L.word}\n` + rules.filter(r => RG.RULE_META[r].sev !== "info").map(r => `- [${SEV_AR[RG.RULE_META[r].sev]}] ${RG.RULE_META[r].title}`).join("\n");
+      try { await navigator.clipboard.writeText(txt); e.target.textContent = "تم النسخ"; } catch { e.target.textContent = "ما قدرنا ننسخ"; }
+      setTimeout(() => e.target.textContent = "نسخ ملخص النتيجة", 1800);
+    });
+    resEl.scrollIntoView({behavior: "smooth", block: "start"});
+  }
+
+  function positives(res) {
+    const out = [], rp = res.repo, ow = res.ownerInfo;
+    if (ow && ow.created_at) { const y = (Date.now() - Date.parse(ow.created_at)) / 3.15e10; if (y >= 2) out.push(`حساب صاحب المشروع قديم (${ago(ow.created_at).replace("منذ ", "عمره ")}).`); }
+    if (rp.stargazers_count >= 100) out.push(`المشروع عليه ${nf.format(rp.stargazers_count)} نجمة، يعني ناس كثير شافوه.`);
+    if (res.commitCount && res.commitCount > 20) out.push(`فيه ${nf.format(res.commitCount)} تعديل، يعني انبنى على مراحل مش دفعة وحدة.`);
+    out.push(`فحصنا ${nf.format(res.read)} ملف وما لقينا أنماط معروفة للبرامج الضارة.`);
+    return out;
+  }
+
+  function renderDev(res, rules, byRule, v) {
+    const link = (p, l) => `https://github.com/${res.o}/${res.rp}/blob/${encodeURIComponent(res.ref)}/${p.split("/").map(encodeURIComponent).join("/")}${l ? "#L" + l : ""}`;
+    const groups = SEV_ORDER.map(sev => {
+      const rs = rules.filter(r => RG.RULE_META[r].sev === sev);
+      if (!rs.length) return "";
+      return `<div class="sev-group"><p class="sev-title">${SEV_AR[sev]} · ${rs.length}</p>${rs.map(r => {
+        const m = RG.RULE_META[r], hits = byRule.get(r);
+        let body = "";
+        if (hits[0].path) {
+          body = `<div class="loc">${hits.slice(0, 4).map(h => `<a href="${esc(link(h.path, h.line))}" target="_blank" rel="noopener">${esc(h.path)}:${h.line}</a>${h.snippet ? `<pre class="snip">${esc(h.snippet)}</pre>` : ""}`).join("")}${hits.length > 4 ? `<span class="more">و ${hits.length - 4} مواضع ثانية</span>` : ""}</div>`;
+        } else if (hits[0].files) {
+          const fs = hits[0].files;
+          body = `<div class="loc">${fs.slice(0, 6).map(p => `<a href="${esc(link(p))}" target="_blank" rel="noopener">${esc(p)}</a>`).join("")}${fs.length > 6 ? `<span class="more">و ${fs.length - 6} ملفات ثانية</span>` : ""}</div>`;
+        } else if (r === "dep-vuln" && res.vulns) {
+          body = `<div class="deps-wrap" style="margin-top:8px"><table class="deps"><thead><tr><th>المكتبة</th><th>الإصدار</th><th>الثغرات</th></tr></thead><tbody>${res.vulns.slice(0, 30).map(d => `<tr><td class="m">${esc(d.name)}</td><td class="m">${esc(d.version)}</td><td class="m">${d.ids.slice(0, 4).map(id => `<a href="https://osv.dev/vulnerability/${encodeURIComponent(id)}" target="_blank" rel="noopener">${esc(id)}</a>`).join(" ")}</td></tr>`).join("")}</tbody></table></div>`;
+        }
+        return `<article class="finding s-${m.sev}"><div class="top"><span class="pill">${SEV_AR[m.sev]}</span><h4>${esc(m.title)}</h4></div><p>${esc(m.dev)}</p>${body}</article>`;
+      }).join("")}</div>`;
+    }).join("");
+    const cov = [];
+    cov.push(`فُحص ${nf.format(res.read)} ملف من أصل ${nf.format(res.totalFiles)} في المشروع (${nf.format(res.codeTotal)} ملف كود).`);
+    if (res.truncated) cov.push("المشروع كبير جداً و GitHub رجّع قائمة ملفات ناقصة.");
+    cov.push(res.vulns === null ? "تعذّر فحص المكتبات عبر OSV.dev." : res.deps.length ? `فُحصت ${nf.format(res.deps.length)} مكتبة بإصدار محدد عبر OSV.dev.` : "ما في مكتبات بإصدارات محددة لفحصها.");
+    const relAssets = res.releases.flatMap(r => (r.assets || []).map(a => a.name)).filter(n => /\.(exe|msi|dmg|zip|rar|7z|apk|appimage|deb)$/i.test(n));
+    if (relAssets.length) cov.push(`صفحة Releases فيها ملفات جاهزة (${relAssets.slice(0, 3).join("، ")}). هذي ما انفحصت؛ افحصها على VirusTotal قبل التشغيل.`);
+    devEl.innerHTML = `<h3>التفاصيل التقنية</h3>
+      <p class="summary-line">الفرع: <bdi dir="ltr">${esc(res.ref)}</bdi> · الدرجة: ${v.score} · ${cov.map(esc).join(" ")}</p>
+      ${groups || `<p>ما في أي ملاحظات.</p>`}
+      <p class="hint">القواعد تفحص أنماط معروفة (تشغيل تلقائي، تمويه، سرقة بيانات، إرسال لعناوين مشبوهة، أوامر تثبيت خطرة، سمعة الحساب). ما بتغني عن مراجعة يدوية للكود الحساس.</p>`;
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    err.hidden = true; resEl.hidden = true; devEl.hidden = true;
+    go.disabled = true; go.textContent = "جاري الفحص…"; prog.hidden = false;
+    try { const res = await scan(urlIn.value); prog.hidden = true; render(res); }
+    catch (ex) { prog.hidden = true; err.textContent = ex instanceof ScanError ? ex.message : "صار خطأ غير متوقع أثناء الفحص. جرّب مرة ثانية."; err.hidden = false; console.error(ex); }
+    finally { go.disabled = false; go.textContent = "افحص"; }
+  });
+})();
+</script>
+</body>
+</html>
